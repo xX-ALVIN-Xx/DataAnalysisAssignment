@@ -91,11 +91,10 @@ flightData_clean$ARRIVAL_DELAY <- ifelse(is.na(flightData_clean$ARRIVAL_DELAY) &
                                          (flightData_clean$ARRIVAL_TIME - flightData_clean$SCHEDULED_ARRIVAL),
                                          round(flightData_clean$ARRIVAL_DELAY,1))
 
-
 flightData_clean$SCHEDULED_DEPARTURE <- fix_military_time(flightData_clean$SCHEDULED_DEPARTURE)
 flightData_clean$DEPARTURE_TIME <- fix_military_time(flightData_clean$DEPARTURE_TIME)
 flightData_clean$SCHEDULED_ARRIVAL <- fix_military_time(flightData_clean$SCHEDULED_ARRIVAL)
-flightData_clean$ARRIVAL_TIME <- fix_military_time(flightData_clean$ARRIVAL_TIME)
+#flightData_clean$ARRIVAL_TIME <- fix_military_time(flightData_clean$ARRIVAL_TIME)
 flightData_clean$WHEELS_OFF <- fix_military_time(flightData_clean$WHEELS_OFF)
 flightData_clean$WHEELS_ON <- fix_military_time(flightData_clean$WHEELS_ON)
 
@@ -103,9 +102,32 @@ flightData_clean$WHEELS_ON <- fix_military_time(flightData_clean$WHEELS_ON)
 #flightData_clean$DEPARTURE_TIME <- sprintf("%04d", flightData_clean$DEPARTURE_TIME)
 #flightData_clean$ARRIVAL_TIME <- sprintf("%04d", flightData_clean$ARRIVAL_TIME)
 
+#fill in Air system delay (0 to 60 minutes)
+#na_pos <- is.na(flightData_clean$AIR_SYSTEM_DELAY)
+#flightData_clean$AIR_SYSTEM_DELAY[na_pos] <- sample(0:60, sum(na_pos), replace = TRUE)
+
+#Data cleaning for Delays
+
 #check missing Data
 is.na(flightData_clean)
 sum(is.na(flightData_clean))
 
 invalid_times <- subset(flightData_clean, DEPARTURE_TIME > 2359 | ARRIVAL_TIME > 2359)
 nrow(invalid_times)  # Should be 0 if everything's clean
+
+sum(flightData_clean$ARRIVAL_DELAY < 0)
+
+#Data Preprocessing
+flightData_clean <- mutate(flightData_clean, Delayed = ifelse(flightData_clean$ARRIVAL_DELAY > 0,1,0))
+
+delayed_flights <- which(flightData_clean$Delayed == 1)
+delayed_flights
+
+
+ggplot(flightData_clean, aes(x= AIR_SYSTEM_DELAY, y= ARRIVAL_DELAY)) +
+  geom_point(alpha=0.3)+
+  geom_smooth(method = "lm", color = "blue") +
+  labs(title = "Impact of Air System Delay on Arrival Delay",
+       x = "Air System Delay (minutes)",
+       y = "Arrival Delay (minutes)")
+
