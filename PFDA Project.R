@@ -94,9 +94,9 @@ flightData_clean$ARRIVAL_DELAY <- ifelse(is.na(flightData_clean$ARRIVAL_DELAY) &
 flightData_clean$SCHEDULED_DEPARTURE <- fix_military_time(flightData_clean$SCHEDULED_DEPARTURE)
 flightData_clean$DEPARTURE_TIME <- fix_military_time(flightData_clean$DEPARTURE_TIME)
 flightData_clean$SCHEDULED_ARRIVAL <- fix_military_time(flightData_clean$SCHEDULED_ARRIVAL)
-#flightData_clean$ARRIVAL_TIME <- fix_military_time(flightData_clean$ARRIVAL_TIME)
 flightData_clean$WHEELS_OFF <- fix_military_time(flightData_clean$WHEELS_OFF)
 flightData_clean$WHEELS_ON <- fix_military_time(flightData_clean$WHEELS_ON)
+#flightData_clean$ARRIVAL_TIME <- fix_military_time(flightData_clean$ARRIVAL_TIME)
 
 #Ensure that it is four numbers making up the time data
 #flightData_clean$DEPARTURE_TIME <- sprintf("%04d", flightData_clean$DEPARTURE_TIME)
@@ -124,6 +124,24 @@ delayed_flights <- which(flightData_clean$Delayed == 1)
 delayed_flights
 
 
+# Loop through each delayed row
+for (i in delayed_flights) {
+  # Identify which delay columns are NA
+  delay_cols <- c("AIR_SYSTEM_DELAY", "SECURITY_DELAY", "AIRLINE_DELAY", "LATE_AIRCRAFT_DELAY", "WEATHER_DELAY")
+  na_delays <- delay_cols[is.na(flightData_clean[i, delay_cols])]
+  
+  # If there are NA delay types, split ARRIVAL_DELAY among them
+  if (length(na_delays) > 0) {
+    split_values <- round(runif(length(na_delays)), 2)  # random weights
+    split_values <- split_values / sum(split_values)    # normalize to sum to 1
+    allocated <- round(flightData_clean$ARRIVAL_DELAY[i] * split_values, 1)
+    
+    # Assign the split values to the NA columns
+    flightData_clean[i, na_delays] <- allocated
+  }
+}
+
+#1.0 Air System Delay vs Arrival Delay
 ggplot(flightData_clean, aes(x= AIR_SYSTEM_DELAY, y= ARRIVAL_DELAY)) +
   geom_point(alpha=0.3)+
   geom_smooth(method = "lm", color = "blue") +
@@ -131,3 +149,54 @@ ggplot(flightData_clean, aes(x= AIR_SYSTEM_DELAY, y= ARRIVAL_DELAY)) +
        x = "Air System Delay (minutes)",
        y = "Arrival Delay (minutes)")
 
+#1.1 Relationship Between Air Time and Air System Delay
+cor.test(flightData_clean$AIR_TIME, flightData_clean$AIR_SYSTEM_DELAY, use = "complete.obs")
+
+ggplot(flightData_clean, aes(x = AIR_TIME, y = AIR_SYSTEM_DELAY)) +
+  geom_point(alpha = 0.3, color = "darkgreen") +
+  geom_smooth(method = "lm", color = "orange") +
+  labs(title = "Air Time vs Air System Delay",
+       x = "Air Time (minutes)",
+       y = "Air System Delay (minutes)")
+
+#2.0 Weather Delay vs Air System Delay
+ggplot(flightData_clean, aes(x = WEATHER_DELAY, y = AIR_SYSTEM_DELAY)) +
+  geom_point(alpha = 0.3, color = "darkgreen") +
+  geom_smooth(method = "lm", color = "orange") +
+  labs(title = "Weather Delay vs Air System Delay",
+       x = "Weather Delay (minutes)",
+       y = "Air System Delay (minutes)")
+#2.1 Seasonal Trends
+ggplot(flightData_clean, aes(x = factor(MONTH), y = AIR_SYSTEM_DELAY)) +
+  geom_boxplot(fill = "lightblue") +
+  labs(title = "Monthly Variation in Air System Delay",
+       x = "Month",
+       y = "Air System Delay (minutes)")
+
+#Air System Delay by Origin Airport
+top_airports <- names(sort(table(flightData_clean$ORIGIN_AIRPORT), decreasing = TRUE))[1:10]
+filtered_data <- subset(flightData_clean, ORIGIN_AIRPORT %in% top_airports)
+  
+# Box plot
+ggplot(filtered_data, aes(x = ORIGIN_AIRPORT, y = AIR_SYSTEM_DELAY)) +
+  geom_boxplot(fill = "lightblue", color = "darkblue", outlier.color = "red") +
+  labs(title = "Air System Delay by Origin Airport",
+       x = "Origin Airport",
+       y = "Air System Delay (minutes)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#Time Dependency of Air System Delay
+flightData_clean$DEP_HOUR <- flightData_clean$SCHEDULED_DEPARTURE %/% 100
+
+ggplot(flightData_clean, aes(x = factor(DEP_HOUR), y = AIR_SYSTEM_DELAY)) +
+  geom_boxplot(fill = "lightcoral") +
+  labs(title = "Air System Delay by Scheduled Departure Hour",
+       x = "Scheduled Departure Hour",
+       y = "Air System Delay (minutes)")
+
+#DAY OF THE WEEK TREND
+ggplot(flightData_clean, aes(x = factor(DAY_OF_WEEK), y = AIR_SYSTEM_DELAY)) +
+  geom_boxplot(fill = "lightyellow") +
+  labs(title = "Air System Delay by Day of Week",
+       x = "Day of Week",
+       y = "Air System Delay (minutes)")
