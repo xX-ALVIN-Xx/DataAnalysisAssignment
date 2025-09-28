@@ -48,9 +48,11 @@ fix_military_time(test_times)
 #	TAXI_OUT: The time duration elapsed between departure from the ORIGIN_AIRPORT and WHEELS_OFF.
 flightData_clean$TAXI_OUT <- ifelse(is.na(flightData_clean$TAXI_OUT), mean(flightData_clean$TAXI_OUT, na.rm =  TRUE),
                                     round(flightData_clean$TAXI_OUT,1))
+
 #TAXI_IN: Time duration elapsed between WHEELS_ON and gate arrival at DESTINATION_AIRPORT.
 flightData_clean$TAXI_IN<- ifelse(is.na(flightData_clean$TAXI_IN), mean(flightData_clean$TAXI_IN, na.rm =  TRUE),
                                     round(flightData_clean$TAXI_IN,1))
+
 #	WHEELS_ON: Time point that the aircraft's wheels touch the ground.
 flightData_clean$WHEELS_ON <- ifelse(is.na(flightData_clean$WHEELS_ON), mean(flightData_clean$WHEELS_ON, na.rm =  TRUE),
                                       round(flightData_clean$WHEELS_ON,1))
@@ -122,6 +124,7 @@ flightData_clean <- mutate(flightData_clean, Delayed = ifelse(flightData_clean$A
 
 delayed_flights <- which(flightData_clean$Delayed == 1)
 delayed_flights
+head(delayed_flights,10)
 
 
 # Loop through each delayed row
@@ -141,6 +144,7 @@ for (i in delayed_flights) {
   }
 }
 
+
 #1.0 Air System Delay vs Arrival Delay
 ggplot(flightData_clean, aes(x= AIR_SYSTEM_DELAY, y= ARRIVAL_DELAY)) +
   geom_point(alpha=0.3)+
@@ -159,6 +163,21 @@ ggplot(flightData_clean, aes(x = AIR_TIME, y = AIR_SYSTEM_DELAY)) +
        x = "Air Time (minutes)",
        y = "Air System Delay (minutes)")
 
+# Create a new column for total operational delay
+flightData_clean <- flightData_clean %>%
+  mutate(TOTAL_DELAY = rowSums(select(., AIR_SYSTEM_DELAY, SECURITY_DELAY, AIRLINE_DELAY, LATE_AIRCRAFT_DELAY, WEATHER_DELAY), na.rm = TRUE),
+         AIR_SYSTEM_SHARE = round(AIR_SYSTEM_DELAY / TOTAL_DELAY, 2))
+
+#1.2 Remove rows where TOTAL_DELAY is 0 to avoid division by zero
+flightData_clean <- flightData_clean %>% filter(TOTAL_DELAY > 0)
+
+ggplot(flightData_clean, aes(x = AIR_SYSTEM_SHARE)) +
+  geom_histogram(binwidth = 0.05, fill = "steelblue", color = "black") +
+  labs(title = "Frequency Distribution of Air System Delay Share",
+       x = "Proportion of Air System Delay in Total Delay",
+       y = "Number of Flights") +
+  theme_minimal()
+
 #2.0 Weather Delay vs Air System Delay
 ggplot(flightData_clean, aes(x = WEATHER_DELAY, y = AIR_SYSTEM_DELAY)) +
   geom_point(alpha = 0.3, color = "darkgreen") +
@@ -173,7 +192,7 @@ ggplot(flightData_clean, aes(x = factor(MONTH), y = AIR_SYSTEM_DELAY)) +
        x = "Month",
        y = "Air System Delay (minutes)")
 
-#Air System Delay by Origin Airport
+#3.0 Air System Delay by Origin Airport
 top_airports <- names(sort(table(flightData_clean$ORIGIN_AIRPORT), decreasing = TRUE))[1:10]
 filtered_data <- subset(flightData_clean, ORIGIN_AIRPORT %in% top_airports)
   
@@ -185,7 +204,7 @@ ggplot(filtered_data, aes(x = ORIGIN_AIRPORT, y = AIR_SYSTEM_DELAY)) +
        y = "Air System Delay (minutes)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-#Time Dependency of Air System Delay
+#4.0 Time Dependency of Air System Delay
 flightData_clean$DEP_HOUR <- flightData_clean$SCHEDULED_DEPARTURE %/% 100
 
 ggplot(flightData_clean, aes(x = factor(DEP_HOUR), y = AIR_SYSTEM_DELAY)) +
@@ -194,9 +213,12 @@ ggplot(flightData_clean, aes(x = factor(DEP_HOUR), y = AIR_SYSTEM_DELAY)) +
        x = "Scheduled Departure Hour",
        y = "Air System Delay (minutes)")
 
-#DAY OF THE WEEK TREND
+#4.1 DAY OF THE WEEK TREND
 ggplot(flightData_clean, aes(x = factor(DAY_OF_WEEK), y = AIR_SYSTEM_DELAY)) +
   geom_boxplot(fill = "lightyellow") +
   labs(title = "Air System Delay by Day of Week",
        x = "Day of Week",
        y = "Air System Delay (minutes)")
+
+ggplot(flightData_clean, aes(x = factor(DAY_OF_WEEK), y = AIR_SYSTEM_DELAY)) +
+  geom_histogram(fill )
