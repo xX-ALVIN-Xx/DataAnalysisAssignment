@@ -214,13 +214,33 @@ ggplot(flightData_clean, aes(x = factor(MONTH), y = AIR_SYSTEM_DELAY)) +
        x = "Month",
        y = "Air System Delay (minutes)")
 
+#3.0 Time Dependency of Air System Delay
+flightData_clean$DEP_HOUR <- flightData_clean$SCHEDULED_DEPARTURE %/% 100
+
+ggplot(flightData_clean, aes(x = factor(DEP_HOUR), y = AIR_SYSTEM_DELAY)) +
+  geom_boxplot(fill = "lightcoral") +
+  labs(title = "Air System Delay by Scheduled Departure Hour",
+       x = "Scheduled Departure Hour",
+       y = "Air System Delay (minutes)")
+
+#3.1 DAY OF THE WEEK TREND
+ggplot(flightData_clean, aes(x = factor(DAY_OF_WEEK), y = AIR_SYSTEM_DELAY)) +
+  geom_boxplot(fill = "lightyellow") +
+  labs(title = "Air System Delay by Day of Week",
+       x = "Day of Week",
+       y = "Air System Delay (minutes)")
+
+ggplot(flightData_clean, aes(x = factor(DAY_OF_WEEK), y = AIR_SYSTEM_DELAY)) +
+  geom_histogram(fill )
+
+
 #3.0 Air System Delay by Origin Airport
 top_airports <- names(sort(table(flightData_clean$ORIGIN_AIRPORT), decreasing = TRUE))[1:10]
 filtered_data <- subset(flightData_clean,
                         ORIGIN_AIRPORT %in% top_airports &
                           !is.na(AIR_SYSTEM_DELAY) &
                           !is.na(DEPARTURE_DELAY))
-  
+
 # Box plot
 ggplot(filtered_data, aes(x = ORIGIN_AIRPORT, y = AIR_SYSTEM_DELAY)) +
   geom_boxplot(fill = "lightblue", color = "darkblue", outlier.color = "red") +
@@ -236,23 +256,3 @@ ggplot(filtered_data, aes(x = AIR_SYSTEM_DELAY, y = DEPARTURE_DELAY, color = ORI
        x = "Air System Delay (minutes)",
        y = "Departure Delay (minutes)") +
   theme_minimal()
-
-
-#4.0 Time Dependency of Air System Delay
-flightData_clean$DEP_HOUR <- flightData_clean$SCHEDULED_DEPARTURE %/% 100
-
-ggplot(flightData_clean, aes(x = factor(DEP_HOUR), y = AIR_SYSTEM_DELAY)) +
-  geom_boxplot(fill = "lightcoral") +
-  labs(title = "Air System Delay by Scheduled Departure Hour",
-       x = "Scheduled Departure Hour",
-       y = "Air System Delay (minutes)")
-
-#4.1 DAY OF THE WEEK TREND
-ggplot(flightData_clean, aes(x = factor(DAY_OF_WEEK), y = AIR_SYSTEM_DELAY)) +
-  geom_boxplot(fill = "lightyellow") +
-  labs(title = "Air System Delay by Day of Week",
-       x = "Day of Week",
-       y = "Air System Delay (minutes)")
-
-ggplot(flightData_clean, aes(x = factor(DAY_OF_WEEK), y = AIR_SYSTEM_DELAY)) +
-  geom_histogram(fill )
