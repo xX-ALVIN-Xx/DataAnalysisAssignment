@@ -157,6 +157,9 @@ for (i in delayed_flights) {
   }
 }
 
+##############################################################
+
+#Jim Voo Zhen Zhan #TP084679
 
 #1.0 Air System Delay vs Arrival Delay
 ggplot(flightData_clean, aes(x= AIR_SYSTEM_DELAY, y= ARRIVAL_DELAY)) +
@@ -183,6 +186,7 @@ ggplot(flightData_clean, aes(x = AIR_SYSTEM_SHARE)) +
   theme_minimal()
 
 #1.2 Relationship Between Air Time and Air System Delay
+#use cor to test for association between a pair of variables, complete.obs is used to disregard NA values
 cor.test(flightData_clean$AIR_TIME, flightData_clean$AIR_SYSTEM_DELAY, use = "complete.obs")
 
 ggplot(flightData_clean, aes(x = AIR_TIME, y = AIR_SYSTEM_DELAY)) +
