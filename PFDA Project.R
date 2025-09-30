@@ -73,7 +73,7 @@ flightData_clean$DEPARTURE_DELAY <- ifelse(is.na(flightData_clean$DEPARTURE_DELA
 
 #AIR_TIME: Time duration between WHEELS_OFF and WHEELS_ON time.
 flightData_clean$AIR_TIME <- ifelse(is.na(flightData_clean$AIR_TIME) & !is.na(flightData_clean$WHEELS_ON) & !is.na(flightData_clean$WHEELS_OFF),
-                                    (flightData_clean$WHEELS_OFF- flightData_clean$WHEELS_OFF),
+                                    (flightData_clean$WHEELS_ON-flightData_clean$WHEELS_OFF),
                                     abs(round(flightData_clean$ELAPSED_TIME,1)))
 
 
@@ -92,7 +92,7 @@ flightData_clean$ARRIVAL_TIME <- ifelse(is.na(flightData_clean$ARRIVAL_TIME) & !
 flightData_clean$ARRIVAL_DELAY <- ifelse(is.na(flightData_clean$ARRIVAL_DELAY) & !is.na(flightData_clean$ARRIVAL_TIME) & !is.na(flightData_clean$SCHEDULED_ARRIVAL),
                                          (flightData_clean$ARRIVAL_TIME - flightData_clean$SCHEDULED_ARRIVAL),
                                          round(flightData_clean$ARRIVAL_DELAY,1))
-
+  
 flightData_clean$SCHEDULED_DEPARTURE <- fix_military_time(flightData_clean$SCHEDULED_DEPARTURE)
 flightData_clean$DEPARTURE_TIME <- fix_military_time(flightData_clean$DEPARTURE_TIME)
 flightData_clean$SCHEDULED_ARRIVAL <- fix_military_time(flightData_clean$SCHEDULED_ARRIVAL)
@@ -127,17 +127,30 @@ delayed_flights
 head(delayed_flights,10)
 
 
-# Loop through each delayed row
+# Define delay columns
+delay_cols <- c("AIR_SYSTEM_DELAY", "SECURITY_DELAY", "AIRLINE_DELAY", "LATE_AIRCRAFT_DELAY", "WEATHER_DELAY")
+
+# Filter complete cases with valid ARRIVAL_DELAY
+complete_cases <- flightData_clean %>%
+  filter(Delayed == 1, !if_any(all_of(delay_cols), is.na), ARRIVAL_DELAY > 0)
+
+# Calculate average ratio of each delay type to ARRIVAL_DELAY
+avg_ratios <- sapply(delay_cols, function(col) {
+  mean(complete_cases[[col]] / complete_cases$ARRIVAL_DELAY, na.rm = TRUE)
+})
+
+# Normalize ratios to sum to 1
+avg_ratios <- avg_ratios / sum(avg_ratios)
+
 for (i in delayed_flights) {
-  # Identify which delay columns are NA
-  delay_cols <- c("AIR_SYSTEM_DELAY", "SECURITY_DELAY", "AIRLINE_DELAY", "LATE_AIRCRAFT_DELAY", "WEATHER_DELAY")
   na_delays <- delay_cols[is.na(flightData_clean[i, delay_cols])]
   
-  # If there are NA delay types, split ARRIVAL_DELAY among them
-  if (length(na_delays) > 0) {
-    split_values <- round(runif(length(na_delays)), 2)  # random weights
-    split_values <- split_values / sum(split_values)    # normalize to sum to 1
-    allocated <- round(flightData_clean$ARRIVAL_DELAY[i] * split_values, 1)
+  if (length(na_delays) > 0 && !is.na(flightData_clean$ARRIVAL_DELAY[i]) && flightData_clean$ARRIVAL_DELAY[i] > 0) {
+    # Use only relevant ratios for missing columns
+    relevant_ratios <- avg_ratios[na_delays]
+    relevant_ratios <- relevant_ratios / sum(relevant_ratios)  # re-normalize
+    
+    allocated <- round(flightData_clean$ARRIVAL_DELAY[i] * relevant_ratios, 1)
     
     # Assign the split values to the NA columns
     flightData_clean[i, na_delays] <- allocated
@@ -153,22 +166,13 @@ ggplot(flightData_clean, aes(x= AIR_SYSTEM_DELAY, y= ARRIVAL_DELAY)) +
        x = "Air System Delay (minutes)",
        y = "Arrival Delay (minutes)")
 
-#1.1 Relationship Between Air Time and Air System Delay
-cor.test(flightData_clean$AIR_TIME, flightData_clean$AIR_SYSTEM_DELAY, use = "complete.obs")
-
-ggplot(flightData_clean, aes(x = AIR_TIME, y = AIR_SYSTEM_DELAY)) +
-  geom_point(alpha = 0.3, color = "darkgreen") +
-  geom_smooth(method = "lm", color = "orange") +
-  labs(title = "Air Time vs Air System Delay",
-       x = "Air Time (minutes)",
-       y = "Air System Delay (minutes)")
-
 # Create a new column for total operational delay
 flightData_clean <- flightData_clean %>%
   mutate(TOTAL_DELAY = rowSums(select(., AIR_SYSTEM_DELAY, SECURITY_DELAY, AIRLINE_DELAY, LATE_AIRCRAFT_DELAY, WEATHER_DELAY), na.rm = TRUE),
          AIR_SYSTEM_SHARE = round(AIR_SYSTEM_DELAY / TOTAL_DELAY, 2))
+flightData_clean$TOTAL_DELAY
 
-#1.2 Remove rows where TOTAL_DELAY is 0 to avoid division by zero
+#1.1 Remove rows where TOTAL_DELAY is 0 to avoid division by zero
 flightData_clean <- flightData_clean %>% filter(TOTAL_DELAY > 0)
 
 ggplot(flightData_clean, aes(x = AIR_SYSTEM_SHARE)) +
@@ -178,9 +182,20 @@ ggplot(flightData_clean, aes(x = AIR_SYSTEM_SHARE)) +
        y = "Number of Flights") +
   theme_minimal()
 
+#1.2 Relationship Between Air Time and Air System Delay
+cor.test(flightData_clean$AIR_TIME, flightData_clean$AIR_SYSTEM_DELAY, use = "complete.obs")
+
+ggplot(flightData_clean, aes(x = AIR_TIME, y = AIR_SYSTEM_DELAY)) +
+  geom_point(alpha = 0.3, color = "darkgreen") +
+  geom_smooth(method = "lm", color = "orange") +
+  labs(title = "Air Time vs Air System Delay",
+       x = "Air Time (minutes)",
+       y = "Air System Delay (minutes)")
+
+
 #2.0 Weather Delay vs Air System Delay
 ggplot(flightData_clean, aes(x = WEATHER_DELAY, y = AIR_SYSTEM_DELAY)) +
-  geom_point(alpha = 0.3, color = "darkgreen") +
+  geom_point(alpha = 0.3, color = "darkgreen  ") +
   geom_smooth(method = "lm", color = "orange") +
   labs(title = "Weather Delay vs Air System Delay",
        x = "Weather Delay (minutes)",
@@ -194,7 +209,10 @@ ggplot(flightData_clean, aes(x = factor(MONTH), y = AIR_SYSTEM_DELAY)) +
 
 #3.0 Air System Delay by Origin Airport
 top_airports <- names(sort(table(flightData_clean$ORIGIN_AIRPORT), decreasing = TRUE))[1:10]
-filtered_data <- subset(flightData_clean, ORIGIN_AIRPORT %in% top_airports)
+filtered_data <- subset(flightData_clean,
+                        ORIGIN_AIRPORT %in% top_airports &
+                          !is.na(AIR_SYSTEM_DELAY) &
+                          !is.na(DEPARTURE_DELAY))
   
 # Box plot
 ggplot(filtered_data, aes(x = ORIGIN_AIRPORT, y = AIR_SYSTEM_DELAY)) +
@@ -203,6 +221,15 @@ ggplot(filtered_data, aes(x = ORIGIN_AIRPORT, y = AIR_SYSTEM_DELAY)) +
        x = "Origin Airport",
        y = "Air System Delay (minutes)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+#3.1 
+ggplot(filtered_data, aes(x = AIR_SYSTEM_DELAY, y = DEPARTURE_DELAY, color = ORIGIN_AIRPORT)) +
+  geom_point(alpha = 0.4) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Air System Delay vs Departure Delay by Origin Airport",
+       x = "Air System Delay (minutes)",
+       y = "Departure Delay (minutes)") +
+  theme_minimal()
+
 
 #4.0 Time Dependency of Air System Delay
 flightData_clean$DEP_HOUR <- flightData_clean$SCHEDULED_DEPARTURE %/% 100
