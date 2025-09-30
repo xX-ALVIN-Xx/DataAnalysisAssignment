@@ -160,6 +160,9 @@ for (i in delayed_flights) {
 ##############################################################
 
 #Jim Voo Zhen Zhan #TP084679
+#Objective 1 : To analyse the impact of air system delay on arrival delay and determine whether congestion 
+#in air traffic control contributes significantly to late arrivals. 
+
 
 #1.0 Air System Delay vs Arrival Delay
 ggplot(flightData_clean, aes(x= AIR_SYSTEM_DELAY, y= ARRIVAL_DELAY)) +
