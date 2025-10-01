@@ -126,7 +126,7 @@ delayed_flights <- which(flightData_clean$Delayed == 1)
 delayed_flights
 head(delayed_flights,10)
 
-
+#Filtering and distributing NA delays
 # Define delay columns
 delay_cols <- c("AIR_SYSTEM_DELAY", "SECURITY_DELAY", "AIRLINE_DELAY", "LATE_AIRCRAFT_DELAY", "WEATHER_DELAY")
 
@@ -234,7 +234,7 @@ ggplot(flightData_clean, aes(x = factor(DAY_OF_WEEK), y = AIR_SYSTEM_DELAY)) +
   geom_histogram(fill )
 
 
-#3.0 Air System Delay by Origin Airport
+#4.0 Air System Delay by Origin Airport
 top_airports <- names(sort(table(flightData_clean$ORIGIN_AIRPORT), decreasing = TRUE))[1:10]
 filtered_data <- subset(flightData_clean,
                         ORIGIN_AIRPORT %in% top_airports &
@@ -248,7 +248,7 @@ ggplot(filtered_data, aes(x = ORIGIN_AIRPORT, y = AIR_SYSTEM_DELAY)) +
        x = "Origin Airport",
        y = "Air System Delay (minutes)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-#3.1 
+#4.1 
 ggplot(filtered_data, aes(x = AIR_SYSTEM_DELAY, y = DEPARTURE_DELAY, color = ORIGIN_AIRPORT)) +
   geom_point(alpha = 0.4) +
   geom_smooth(method = "lm", se = FALSE) +
