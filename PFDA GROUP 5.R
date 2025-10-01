@@ -264,9 +264,9 @@ ggplot(filtered_data, aes(x = AIR_SYSTEM_DELAY, y = DEPARTURE_DELAY, color = ORI
 ################################################################################
 
 #Liew Zer Shuen TP076363
-#Objective: To analyse the impact of Weather Delay on Arrival Delay 
-#and determine whether adverse weather conditions contribute 
-#significantly to late arrivals.
+#Objective: To analyse the impact of Weather Delay on Arrival Delay and 
+#determine whether adverse weather conditions contribute significantly to late 
+#arrivals.
 
 # 1.0 Weather Delay vs Arrival Delay
 ggplot(flightData_clean, aes(x = WEATHER_DELAY, y = ARRIVAL_DELAY)) +
