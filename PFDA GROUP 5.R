@@ -9,7 +9,10 @@ library(stringr)
 library(tidyverse)
 library(lubridate)
 
+#JimVoo
 setwd("C:\\Users\\User\\OneDrive\\Desktop\\Project\\R Programming\\R Data\\2 Dataset")
+#LiewZerShuen
+setwd("C:\\Users\\zersh\\Desktop\\PFDA_Assignment_Datasets\\2 Dataset")
 flightData <- read.csv("flights.csv", header = TRUE)
 flightData
 acData <- read.csv("iata_airline_codes.csv")
@@ -157,6 +160,7 @@ for (i in delayed_flights) {
   }
 }
 
+
 ##############################################################
 
 #Jim Voo Zhen Zhan #TP084679
@@ -256,3 +260,89 @@ ggplot(filtered_data, aes(x = AIR_SYSTEM_DELAY, y = DEPARTURE_DELAY, color = ORI
        x = "Air System Delay (minutes)",
        y = "Departure Delay (minutes)") +
   theme_minimal()
+
+################################################################################
+
+#Liew Zer Shuen TP076363
+#Objective: To analyse the impact of Weather Delay on Arrival Delay 
+#and determine whether adverse weather conditions contribute 
+#significantly to late arrivals.
+
+# 1.0 Weather Delay vs Arrival Delay
+ggplot(flightData_clean, aes(x = WEATHER_DELAY, y = ARRIVAL_DELAY)) +
+  geom_point(alpha = 0.3, color = "skyblue") +
+  geom_smooth(method = "lm", color = "darkblue") +
+  labs(title = "Impact of Weather Delay on Arrival Delay",
+       x = "Weather Delay (minutes)",
+       y = "Arrival Delay (minutes)")
+
+# 1.1 Contribution of Weather Delay to Total Delay
+flightData_clean <- flightData_clean %>%
+  mutate(TOTAL_DELAY = rowSums(select(., AIR_SYSTEM_DELAY, SECURITY_DELAY, AIRLINE_DELAY, LATE_AIRCRAFT_DELAY, WEATHER_DELAY), na.rm = TRUE),
+         WEATHER_SHARE = round(WEATHER_DELAY / TOTAL_DELAY, 2))
+
+# Remove rows where TOTAL_DELAY is 0 to avoid division by zero
+flightData_clean <- flightData_clean %>% filter(TOTAL_DELAY > 0)
+
+ggplot(flightData_clean, aes(x = WEATHER_SHARE)) +
+  geom_histogram(binwidth = 0.05, fill = "lightblue", color = "black") +
+  labs(title = "Distribution of Weather Delay Share in Total Delay",
+       x = "Proportion of Weather Delay",
+       y = "Number of Flights") +
+  theme_minimal()
+
+# 2.0 Weather Delay vs Departure Delay
+ggplot(flightData_clean, aes(x = WEATHER_DELAY, y = DEPARTURE_DELAY)) +
+  geom_point(alpha = 0.3, color = "darkgreen") +
+  geom_smooth(method = "lm", color = "orange") +
+  labs(title = "Weather Delay vs Departure Delay",
+       x = "Weather Delay (minutes)",
+       y = "Departure Delay (minutes)")
+
+# 2.1 Seasonal Trends (Monthly Weather Delays)
+ggplot(flightData_clean, aes(x = factor(MONTH), y = WEATHER_DELAY)) +
+  geom_boxplot(fill = "lightsteelblue") +
+  labs(title = "Monthly Variation in Weather Delay",
+       x = "Month",
+       y = "Weather Delay (minutes)")
+
+# 3.0 Time Dependency of Weather Delay
+flightData_clean$DEP_HOUR <- flightData_clean$SCHEDULED_DEPARTURE %/% 100
+
+ggplot(flightData_clean, aes(x = factor(DEP_HOUR), y = WEATHER_DELAY)) +
+  geom_boxplot(fill = "lightcoral") +
+  labs(title = "Weather Delay by Scheduled Departure Hour",
+       x = "Scheduled Departure Hour",
+       y = "Weather Delay (minutes)")
+
+# 3.1 Day of Week Trends
+ggplot(flightData_clean, aes(x = factor(DAY_OF_WEEK), y = WEATHER_DELAY)) +
+  geom_boxplot(fill = "khaki") +
+  labs(title = "Weather Delay by Day of Week",
+       x = "Day of Week",
+       y = "Weather Delay (minutes)")
+
+# 4.0 Weather Delay by Origin Airport
+top_airports <- names(sort(table(flightData_clean$ORIGIN_AIRPORT), decreasing = TRUE))[1:10]
+filtered_data <- subset(flightData_clean,
+                        ORIGIN_AIRPORT %in% top_airports &
+                          !is.na(WEATHER_DELAY) &
+                          !is.na(DEPARTURE_DELAY))
+
+ggplot(filtered_data, aes(x = ORIGIN_AIRPORT, y = WEATHER_DELAY)) +
+  geom_boxplot(fill = "lightblue", color = "darkblue", outlier.color = "red") +
+  labs(title = "Weather Delay by Origin Airport (Top 10 Airports)",
+       x = "Origin Airport",
+       y = "Weather Delay (minutes)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# 4.1 Weather Delay vs Departure Delay by Airport
+ggplot(filtered_data, aes(x = WEATHER_DELAY, y = DEPARTURE_DELAY, color = ORIGIN_AIRPORT)) +
+  geom_point(alpha = 0.4) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Weather Delay vs Departure Delay by Origin Airport",
+       x = "Weather Delay (minutes)",
+       y = "Departure Delay (minutes)") +
+  theme_minimal()
+
+################################################################################
