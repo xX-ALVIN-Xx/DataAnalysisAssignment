@@ -385,12 +385,11 @@ ggplot(flightData_long %>% filter(ORIGIN_AIRPORT %in% top_airports),
 
 
 # -----------------------------------------------------------
-# Analysis 1-4: Average Delay Type Contribution per Airport
+# Analysis 1-4: Average Delay Type Contribution of the top 15 Airports
 
-# Ensure ORIGIN_AIRPORT is a character
+
 flightData_clean$ORIGIN_AIRPORT <- as.character(flightData_clean$ORIGIN_AIRPORT)
 
-# Summarise average delays
 avg_contrib <- flightData_clean %>%
   group_by(ORIGIN_AIRPORT) %>%
   summarise(
@@ -403,13 +402,11 @@ avg_contrib <- flightData_clean %>%
   arrange(desc(avg_arrival)) %>%
   slice_head(n = 15)
 
-# Lookup table: map FAA numeric codes -> IATA 3-letter codes
 lookup <- data.frame(
   ORIGIN_AIRPORT = c("15411", "15323", "14457", "11982", "10781"),
   IATA = c("ANC", "HNL", "OGG", "JFK", "LGA")
 )
 
-# Join lookup with summary data
 avg_contrib <- avg_contrib %>%
   left_join(lookup, by = "ORIGIN_AIRPORT")
 
@@ -418,7 +415,6 @@ avg_contrib$AirportCode <- ifelse(is.na(avg_contrib$IATA),
                                   avg_contrib$ORIGIN_AIRPORT,
                                   avg_contrib$IATA)
 
-# Reshape for plotting
 avg_contrib_long <- avg_contrib %>%
   pivot_longer(
     cols = starts_with("avg_"),
@@ -426,7 +422,6 @@ avg_contrib_long <- avg_contrib %>%
     values_to = "Minutes"
   )
 
-# Plot with only 3-letter codes
 ggplot(avg_contrib_long, aes(x = AirportCode, y = Minutes, fill = DelayType)) +
   geom_bar(stat = "identity", position = "dodge") +
   coord_flip() +
@@ -439,14 +434,23 @@ ggplot(avg_contrib_long, aes(x = AirportCode, y = Minutes, fill = DelayType)) +
 
 # -----------------------------------------------------------
 # Extra Analysis: Ranking Airports by Average Delays
-avg_rank <- avg_contrib %>%
-  pivot_longer(cols = c(avg_air_system, avg_airline, avg_late_aircraft), 
-               names_to="DelayType", values_to="Minutes") %>%
-  group_by(DelayType) %>%
-  arrange(desc(Minutes))
 
-ggplot(avg_rank, aes(x=reorder(ORIGIN_AIRPORT, -Minutes), y=Minutes, fill=DelayType)) +
+
+avg_rank <- avg_contrib %>%
+  pivot_longer(
+    cols = c(avg_air_system, avg_airline, avg_late_aircraft), 
+    names_to = "DelayType", 
+    values_to = "Minutes"
+  ) %>%
+  group_by(DelayType) %>%
+  arrange(desc(Minutes)) %>%
+  ungroup()
+
+ggplot(avg_rank, aes(x=reorder(AirportCode, -Minutes), y=Minutes, fill=DelayType)) +
   geom_col(position="dodge") +
-  labs(title="Ranking of Airports by Average Delay Type",
-       x="Origin Airport", y="Average Delay (min)") +
+  labs(
+    title = "Ranking of Airports by Average Delay Type",
+    x = "Airport (3-letter IATA)",
+    y = "Average Delay (min)"
+  ) +
   theme(axis.text.x = element_text(angle=45, hjust=1))
