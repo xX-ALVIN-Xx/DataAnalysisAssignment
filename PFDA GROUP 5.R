@@ -101,17 +101,7 @@ flightData_clean$DEPARTURE_TIME <- fix_military_time(flightData_clean$DEPARTURE_
 flightData_clean$SCHEDULED_ARRIVAL <- fix_military_time(flightData_clean$SCHEDULED_ARRIVAL)
 flightData_clean$WHEELS_OFF <- fix_military_time(flightData_clean$WHEELS_OFF)
 flightData_clean$WHEELS_ON <- fix_military_time(flightData_clean$WHEELS_ON)
-#flightData_clean$ARRIVAL_TIME <- fix_military_time(flightData_clean$ARRIVAL_TIME)
 
-#Ensure that it is four numbers making up the time data
-#flightData_clean$DEPARTURE_TIME <- sprintf("%04d", flightData_clean$DEPARTURE_TIME)
-#flightData_clean$ARRIVAL_TIME <- sprintf("%04d", flightData_clean$ARRIVAL_TIME)
-
-#fill in Air system delay (0 to 60 minutes)
-#na_pos <- is.na(flightData_clean$AIR_SYSTEM_DELAY)
-#flightData_clean$AIR_SYSTEM_DELAY[na_pos] <- sample(0:60, sum(na_pos), replace = TRUE)
-
-#Data cleaning for Delays
 
 #check missing Data
 is.na(flightData_clean)
@@ -238,35 +228,12 @@ ggplot(flightData_clean, aes(x = factor(DAY_OF_WEEK), y = AIR_SYSTEM_DELAY)) +
   geom_histogram(fill )
 
 
-#4.0 Air System Delay by Origin Airport
-top_airports <- names(sort(table(flightData_clean$ORIGIN_AIRPORT), decreasing = TRUE))[1:10]
-filtered_data <- subset(flightData_clean,
-                        ORIGIN_AIRPORT %in% top_airports &
-                          !is.na(AIR_SYSTEM_DELAY) &
-                          !is.na(DEPARTURE_DELAY))
-
-# Box plot
-ggplot(filtered_data, aes(x = ORIGIN_AIRPORT, y = AIR_SYSTEM_DELAY)) +
-  geom_boxplot(fill = "lightblue", color = "darkblue", outlier.color = "red") +
-  labs(title = "Air System Delay by Origin Airport",
-       x = "Origin Airport",
-       y = "Air System Delay (minutes)") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-#4.1 
-ggplot(filtered_data, aes(x = AIR_SYSTEM_DELAY, y = DEPARTURE_DELAY, color = ORIGIN_AIRPORT)) +
-  geom_point(alpha = 0.4) +
-  geom_smooth(method = "lm", se = FALSE) +
-  labs(title = "Air System Delay vs Departure Delay by Origin Airport",
-       x = "Air System Delay (minutes)",
-       y = "Departure Delay (minutes)") +
-  theme_minimal()
-
 ################################################################################
 
 #Liew Zer Shuen TP076363
-#Objective: To analyse the impact of Weather Delay on Arrival Delay and 
-#determine whether adverse weather conditions contribute significantly to late 
-#arrivals.
+#Objective: To analyse the impact of Weather Delay on Arrival Delay 
+#and determine whether adverse weather conditions contribute 
+#significantly to late arrivals.
 
 # 1.0 Weather Delay vs Arrival Delay
 ggplot(flightData_clean, aes(x = WEATHER_DELAY, y = ARRIVAL_DELAY)) +
@@ -345,4 +312,4 @@ ggplot(filtered_data, aes(x = WEATHER_DELAY, y = DEPARTURE_DELAY, color = ORIGIN
        y = "Departure Delay (minutes)") +
   theme_minimal()
 
-################################################################################
+#############################################################
