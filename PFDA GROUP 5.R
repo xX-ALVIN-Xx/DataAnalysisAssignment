@@ -387,9 +387,10 @@ ggplot(flightData_long %>% filter(ORIGIN_AIRPORT %in% top_airports),
 # -----------------------------------------------------------
 # Analysis 1-4: Average Delay Type Contribution per Airport
 
+# Ensure ORIGIN_AIRPORT is a character
 flightData_clean$ORIGIN_AIRPORT <- as.character(flightData_clean$ORIGIN_AIRPORT)
 
-
+# Summarise average delays
 avg_contrib <- flightData_clean %>%
   group_by(ORIGIN_AIRPORT) %>%
   summarise(
@@ -397,15 +398,27 @@ avg_contrib <- flightData_clean %>%
     avg_airline = mean(AIRLINE_DELAY, na.rm = TRUE),
     avg_late_aircraft = mean(LATE_AIRCRAFT_DELAY, na.rm = TRUE),
     avg_arrival = mean(ARRIVAL_DELAY, na.rm = TRUE),
-    .groups = 'drop'
+    .groups = "drop"
   ) %>%
   arrange(desc(avg_arrival)) %>%
   slice_head(n = 15)
 
-avg_contrib$ORIGIN_AIRPORT
-levels = avg_contrib$ORIGIN_AIRPORT  
+# Lookup table: map FAA numeric codes -> IATA 3-letter codes
+lookup <- data.frame(
+  ORIGIN_AIRPORT = c("15411", "15323", "14457", "11982", "10781"),
+  IATA = c("ANC", "HNL", "OGG", "JFK", "LGA")
+)
 
+# Join lookup with summary data
+avg_contrib <- avg_contrib %>%
+  left_join(lookup, by = "ORIGIN_AIRPORT")
 
+# If in lookup, use IATA code, else keep original 3-letter code
+avg_contrib$AirportCode <- ifelse(is.na(avg_contrib$IATA),
+                                  avg_contrib$ORIGIN_AIRPORT,
+                                  avg_contrib$IATA)
+
+# Reshape for plotting
 avg_contrib_long <- avg_contrib %>%
   pivot_longer(
     cols = starts_with("avg_"),
@@ -413,16 +426,16 @@ avg_contrib_long <- avg_contrib %>%
     values_to = "Minutes"
   )
 
-ggplot(avg_contrib_long, aes(x = ORIGIN_AIRPORT, y = Minutes, fill = DelayType)) +
+# Plot with only 3-letter codes
+ggplot(avg_contrib_long, aes(x = AirportCode, y = Minutes, fill = DelayType)) +
   geom_bar(stat = "identity", position = "dodge") +
   coord_flip() +
   labs(
     title = "Top 15 Airports: Average Delay Type Contribution",
-    x = "Airport",
+    x = "Airport (3-letter IATA)",
     y = "Average Minutes"
   ) +
   theme(axis.text.y = element_text(size = 7))
-
 
 # -----------------------------------------------------------
 # Extra Analysis: Ranking Airports by Average Delays
