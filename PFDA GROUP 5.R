@@ -8,11 +8,15 @@ library(dplyr)
 library(stringr)
 library(tidyverse)
 library(lubridate)
+library(corrplot)
 
 #JimVoo
 setwd("C:\\Users\\User\\OneDrive\\Desktop\\Project\\R Programming\\R Data\\2 Dataset")
 #LiewZerShuen
 setwd("C:\\Users\\zersh\\Desktop\\PFDA_Assignment_Datasets\\2 Dataset")
+#HaziqThaqiff
+setwd("C:\\Users\\user\\Downloads\\R-assignment")
+
 flightData <- read.csv("flights.csv", header = TRUE)
 flightData
 acData <- read.csv("iata_airline_codes.csv")
@@ -313,3 +317,123 @@ ggplot(filtered_data, aes(x = WEATHER_DELAY, y = DEPARTURE_DELAY, color = ORIGIN
   theme_minimal()
 
 #############################################################
+
+#Haziq Thaqiff Bin Mohd Faizul   #TP072247
+
+# Objective: To analyze whether the impact of different delay types 
+# (Air System Delay, Airline Delay, and Late Aircraft Delay) on Arrival Delay 
+# varies across different airports
+##############################
+
+
+# Analysis 1-1: Relationship between delay types and arrival delay overall
+corr_matrix <- flightData_clean[,c("ARRIVAL_DELAY", delay_cols)]
+cor_mat <- cor(corr_matrix, use="complete.obs")
+
+cor_df <- as.data.frame(as.table(cor_mat))
+
+ggplot(cor_df, aes(Var1, Var2, fill=Freq)) +
+  geom_tile(color="white") +
+  scale_fill_gradient2(low="blue", high="red", mid="white", midpoint=0,
+                       limit=c(-1,1), space="Lab", name="Correlation") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle=45, vjust=1, hjust=1),
+        panel.grid.major = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) +
+  labs(title="Correlation between Delay Types and Arrival Delay",
+       x="", y="")
+
+# -----------------------------------------------------------
+# Analysis 1-2: Variation of delay impacts by top airports
+top_airports <- names(sort(table(flightData_clean$ORIGIN_AIRPORT), decreasing=TRUE))[1:10]
+filtered_data <- subset(flightData_clean, ORIGIN_AIRPORT %in% top_airports)
+
+ggplot(filtered_data, aes(x=AIR_SYSTEM_DELAY, y=ARRIVAL_DELAY)) +
+  geom_point(alpha=0.3, color="darkblue") +
+  geom_smooth(method="lm", color="red") +
+  facet_wrap(~ORIGIN_AIRPORT) +
+  labs(title="Impact of Air System Delay on Arrival Delay by Airport",
+       x="Air System Delay (min)", y="Arrival Delay (min)")
+
+ggplot(filtered_data, aes(x=AIRLINE_DELAY, y=ARRIVAL_DELAY)) +
+  geom_point(alpha=0.3, color="darkgreen") +
+  geom_smooth(method="lm", color="orange") +
+  facet_wrap(~ORIGIN_AIRPORT) +
+  labs(title="Impact of Airline Delay on Arrival Delay by Airport",
+       x="Airline Delay (min)", y="Arrival Delay (min)")
+
+ggplot(filtered_data, aes(x=LATE_AIRCRAFT_DELAY, y=ARRIVAL_DELAY)) +
+  geom_point(alpha=0.3, color="purple") +
+  geom_smooth(method="lm", color="black") +
+  facet_wrap(~ORIGIN_AIRPORT) +
+  labs(title="Impact of Late Aircraft Delay on Arrival Delay by Airport",
+       x="Late Aircraft Delay (min)", y="Arrival Delay (min)")
+
+# -----------------------------------------------------------
+# Analysis 1-3: Contribution proportions of delay types per airport
+
+flightData_long <- flightData_clean %>%
+  gather(key="DelayType", value="Minutes", all_of(delay_cols))
+
+ggplot(flightData_long %>% filter(ORIGIN_AIRPORT %in% top_airports),
+       aes(x=ORIGIN_AIRPORT, y=Minutes, fill=DelayType)) +
+  geom_bar(stat="identity", position="fill") +
+  labs(title="Proportional Contribution of Delay Types by Airport",
+       x="Origin Airport", y="Proportion of Delay") +
+  theme(axis.text.x = element_text(angle=45, hjust=1))
+
+
+# -----------------------------------------------------------
+# Analysis 1-4: Average Delay Type Contribution per Airport
+
+flightData_clean$ORIGIN_AIRPORT <- as.character(flightData_clean$ORIGIN_AIRPORT)
+
+
+avg_contrib <- flightData_clean %>%
+  group_by(ORIGIN_AIRPORT) %>%
+  summarise(
+    avg_air_system = mean(AIR_SYSTEM_DELAY, na.rm = TRUE),
+    avg_airline = mean(AIRLINE_DELAY, na.rm = TRUE),
+    avg_late_aircraft = mean(LATE_AIRCRAFT_DELAY, na.rm = TRUE),
+    avg_arrival = mean(ARRIVAL_DELAY, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>%
+  arrange(desc(avg_arrival)) %>%
+  slice_head(n = 15)
+
+avg_contrib$ORIGIN_AIRPORT
+levels = avg_contrib$ORIGIN_AIRPORT  
+
+
+avg_contrib_long <- avg_contrib %>%
+  pivot_longer(
+    cols = starts_with("avg_"),
+    names_to = "DelayType",
+    values_to = "Minutes"
+  )
+
+ggplot(avg_contrib_long, aes(x = ORIGIN_AIRPORT, y = Minutes, fill = DelayType)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  coord_flip() +
+  labs(
+    title = "Top 15 Airports: Average Delay Type Contribution",
+    x = "Airport",
+    y = "Average Minutes"
+  ) +
+  theme(axis.text.y = element_text(size = 7))
+
+
+# -----------------------------------------------------------
+# Extra Analysis: Ranking Airports by Average Delays
+avg_rank <- avg_contrib %>%
+  pivot_longer(cols = c(avg_air_system, avg_airline, avg_late_aircraft), 
+               names_to="DelayType", values_to="Minutes") %>%
+  group_by(DelayType) %>%
+  arrange(desc(Minutes))
+
+ggplot(avg_rank, aes(x=reorder(ORIGIN_AIRPORT, -Minutes), y=Minutes, fill=DelayType)) +
+  geom_col(position="dodge") +
+  labs(title="Ranking of Airports by Average Delay Type",
+       x="Origin Airport", y="Average Delay (min)") +
+  theme(axis.text.x = element_text(angle=45, hjust=1))
