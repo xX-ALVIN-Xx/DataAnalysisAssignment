@@ -250,10 +250,6 @@ ggplot(flightData_clean, aes(x = factor(DAY_OF_WEEK), y = AIR_SYSTEM_DELAY)) +
        x = "Day of Week",
        y = "Air System Delay (minutes)")
 
-ggplot(flightData_clean, aes(x = factor(DAY_OF_WEEK), y = AIR_SYSTEM_DELAY)) +
-  geom_histogram(fill )
-
-
 ################################################################################
 
 #Lim Jon Rae (TP067993)
