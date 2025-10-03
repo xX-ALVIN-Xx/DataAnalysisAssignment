@@ -282,6 +282,8 @@ ggplot(flightData_clean, aes(x = SECURITY_SHARE)) +
 
 # 1.3 Impact of Security Delay on Arrival Delay Across Various Airports – to analyse the impact of security delay on arrival delay across various airports. 
 
+filtered_data <- subset(flightData_clean, ORIGIN_AIRPORT %in% top_airports)
+
 ggplot(filtered_data, aes(x = SECURITY_DELAY, y = ARRIVAL_DELAY, color = ORIGIN_AIRPORT)) +
   geom_point(alpha = 0.4) +
   geom_smooth(method = "lm", se = FALSE) +
