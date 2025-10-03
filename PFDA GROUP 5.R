@@ -230,6 +230,11 @@ ggplot(flightData_clean, aes(x = factor(DAY_OF_WEEK), y = AIR_SYSTEM_DELAY)) +
 
 ################################################################################
 
+#Lim Jon Rae (TP067993)
+#Objective: To investigate the impact of Security Delay on Arrival Delay and 
+
+################################################################################
+
 #Liew Zer Shuen TP076363
 #Objective: To analyse the impact of Weather Delay on Arrival Delay 
 #and determine whether adverse weather conditions contribute 
