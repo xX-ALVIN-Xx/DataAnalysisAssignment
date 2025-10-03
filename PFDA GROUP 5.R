@@ -1,3 +1,8 @@
+#Jim Voo Zhen Zhan TP084679 
+#Liew Zer Shuen TP076363
+#Haziq Thaqiff bin Mohd Faizul TP072247
+#Lim Jon Rae TP067993 
+################################################################################
 library(ggplot2)
 library(data.table)
 library(crayon)
