@@ -10,6 +10,7 @@ library(tidyverse)
 library(lubridate)
 library(corrplot)
 
+
 #JimVoo
 setwd("C:\\Users\\User\\OneDrive\\Desktop\\Project\\R Programming\\R Data\\2 Dataset")
 #LiewZerShuen
@@ -105,23 +106,23 @@ flightData_clean$DEPARTURE_TIME <- fix_military_time(flightData_clean$DEPARTURE_
 flightData_clean$SCHEDULED_ARRIVAL <- fix_military_time(flightData_clean$SCHEDULED_ARRIVAL)
 flightData_clean$WHEELS_OFF <- fix_military_time(flightData_clean$WHEELS_OFF)
 flightData_clean$WHEELS_ON <- fix_military_time(flightData_clean$WHEELS_ON)
+flightData_clean$ARRIVAL_TIME <-fix_military_time(flightData_clean$ARRIVAL_TIME)
 
 
-#check missing Data
-is.na(flightData_clean)
-sum(is.na(flightData_clean))
 
-invalid_times <- subset(flightData_clean, DEPARTURE_TIME > 2359 | ARRIVAL_TIME > 2359)
-nrow(invalid_times)  # Should be 0 if everything's clean
-
-sum(flightData_clean$ARRIVAL_DELAY < 0)
 
 #Data Preprocessing
 flightData_clean <- mutate(flightData_clean, Delayed = ifelse(flightData_clean$ARRIVAL_DELAY > 0,1,0))
 
-delayed_flights <- which(flightData_clean$Delayed == 1)
+delayed_flights <- flightData_clean %>% filter(Delayed == 1)
 delayed_flights
 head(delayed_flights,10)
+
+# Summarize missing values across all columns for these rows
+missing_summary <- colSums(is.na(delayed_flights))
+
+# View columns with missing values
+missing_summary[missing_summary > 0]
 
 #Filtering and distributing NA delays
 # Define delay columns
@@ -153,6 +154,15 @@ for (i in delayed_flights) {
     flightData_clean[i, na_delays] <- allocated
   }
 }
+
+#check missing Data
+is.na(flightData_clean$Delayed == 1)
+sum(is.na(flightData_clean))
+
+invalid_times <- subset(flightData_clean, DEPARTURE_TIME > 2359 | ARRIVAL_TIME > 2359)
+nrow(invalid_times)  # Should be 0 if everything's clean
+
+sum(flightData_clean$ARRIVAL_DELAY < 0)
 
 
 ##############################################################
