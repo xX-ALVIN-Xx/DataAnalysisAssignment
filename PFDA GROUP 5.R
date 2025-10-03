@@ -252,48 +252,6 @@ ggplot(flightData_clean, aes(x = factor(DAY_OF_WEEK), y = AIR_SYSTEM_DELAY)) +
 
 ################################################################################
 
-#Lim Jon Rae (TP067993)
-# 1.0 Objective: To analyse the impact of Security Delay on Arrival Delay 
-
-# 1.1 Security Delay vs Arrival Delay – To assess the correlation between security delays and arrival delays. 
-
-ggplot(flightData_clean, aes(x = SECURITY_DELAY, y = ARRIVAL_DELAY)) +
-  geom_point(alpha = 0.3, color = "lightgreen") +
-  geom_smooth(method = "lm", color = "lightblue") +
-  labs(title = "Impact of Security Delay on Arrival Delay",
-       x = "Security Delay (minutes)",
-       y = "Arrival Delay (minutes)")
-
-# 1.2 Contribution of Security Delay to Total Delay – to investigate share of total security delay that is caused by security delay. 
-
-flightData_clean <- flightData_clean %>%
-  mutate(TOTAL_DELAY = rowSums(select(., AIR_SYSTEM_DELAY, SECURITY_DELAY, AIRLINE_DELAY, LATE_AIRCRAFT_DELAY, WEATHER_DELAY), na.rm = TRUE),
-         SECURITY_SHARE = round(SECURITY_DELAY / TOTAL_DELAY, 2))
-
-# 1.2.1 Remove rows where TOTAL_DELAY is 0 to avoid division by zero
-flightData_clean <- flightData_clean %>% filter(TOTAL_DELAY > 0)
-
-ggplot(flightData_clean, aes(x = SECURITY_SHARE)) +
-  geom_histogram(binwidth = 0.05, fill = "green", color = "purple") +
-  labs(title = "Contribution of Security Delay to Total Delay",
-       x = "Proportion of Security Delay",
-       y = "Arrival Delay") +
-  theme_minimal()
-
-# 1.3 Impact of Security Delay on Arrival Delay Across Various Airports – to analyse the impact of security delay on arrival delay across various airports. 
-
-filtered_data <- subset(flightData_clean, ORIGIN_AIRPORT %in% top_airports)
-
-ggplot(filtered_data, aes(x = SECURITY_DELAY, y = ARRIVAL_DELAY, color = ORIGIN_AIRPORT)) +
-  geom_point(alpha = 0.4) +
-  geom_smooth(method = "lm", se = FALSE) +
-  labs(title = "Security Delay vs Arrival Delay Across Various Airports",
-       x = "Security Delay (minutes)",
-       y = "Arrival Delay (minutes)") +
-  theme_minimal() 
-
-################################################################################
-
 #Liew Zer Shuen TP076363
 #Objective: To analyse the impact of Weather Delay on Arrival Delay 
 #and determine whether adverse weather conditions contribute 
@@ -556,4 +514,45 @@ ggplot(state_delay_summary_filtered, aes(x = reorder(STATE, -Minutes), y = Minut
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   scale_fill_brewer(palette = "Set2")
 
+################################################################################
+
+#Lim Jon Rae (TP067993)
+# 1.0 Objective: To analyse the impact of Security Delay on Arrival Delay 
+
+# 1.1 Security Delay vs Arrival Delay – To assess the correlation between security delays and arrival delays. 
+
+ggplot(flightData_clean, aes(x = SECURITY_DELAY, y = ARRIVAL_DELAY)) +
+  geom_point(alpha = 0.3, color = "lightgreen") +
+  geom_smooth(method = "lm", color = "lightblue") +
+  labs(title = "Impact of Security Delay on Arrival Delay",
+       x = "Security Delay (minutes)",
+       y = "Arrival Delay (minutes)")
+
+# 1.2 Contribution of Security Delay to Total Delay – to investigate share of total security delay that is caused by security delay. 
+
+flightData_clean <- flightData_clean %>%
+  mutate(TOTAL_DELAY = rowSums(select(., AIR_SYSTEM_DELAY, SECURITY_DELAY, AIRLINE_DELAY, LATE_AIRCRAFT_DELAY, WEATHER_DELAY), na.rm = TRUE),
+         SECURITY_SHARE = round(SECURITY_DELAY / TOTAL_DELAY, 2))
+
+# 1.2.1 Remove rows where TOTAL_DELAY is 0 to avoid division by zero
+flightData_clean <- flightData_clean %>% filter(TOTAL_DELAY > 0)
+
+ggplot(flightData_clean, aes(x = SECURITY_SHARE)) +
+  geom_histogram(binwidth = 0.05, fill = "green", color = "purple") +
+  labs(title = "Contribution of Security Delay to Total Delay",
+       x = "Proportion of Security Delay",
+       y = "Arrival Delay") +
+  theme_minimal()
+
+# 1.3 Impact of Security Delay on Arrival Delay Across Various Airports – to analyse the impact of security delay on arrival delay across various airports. 
+
+filtered_data <- subset(flightData_clean, ORIGIN_AIRPORT %in% top_airports)
+
+ggplot(filtered_data, aes(x = SECURITY_DELAY, y = ARRIVAL_DELAY, color = ORIGIN_AIRPORT)) +
+  geom_point(alpha = 0.4) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Security Delay vs Arrival Delay Across Various Airports",
+       x = "Security Delay (minutes)",
+       y = "Arrival Delay (minutes)") +
+  theme_minimal() 
 
