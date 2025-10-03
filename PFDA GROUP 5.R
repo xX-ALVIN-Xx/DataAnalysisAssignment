@@ -16,6 +16,8 @@ setwd("C:\\Users\\User\\OneDrive\\Desktop\\Project\\R Programming\\R Data\\2 Dat
 setwd("C:\\Users\\zersh\\Desktop\\PFDA_Assignment_Datasets\\2 Dataset")
 #HaziqThaqiff
 setwd("C:\\Users\\user\\Downloads\\R-assignment")
+#LimJonRae
+setwd("C:\\Users\\Acer\\Desktop\\APU MM Tech Degree\\Curricular Matters\\Degree Year 2 Semester 1 subjects and notes\\PFDA\\Group Assignment\\2 Dataset")
 
 flightData <- read.csv("flights.csv", header = TRUE)
 flightData
@@ -235,7 +237,32 @@ ggplot(flightData_clean, aes(x = factor(DAY_OF_WEEK), y = AIR_SYSTEM_DELAY)) +
 ################################################################################
 
 #Lim Jon Rae (TP067993)
-#Objective: To investigate the impact of Security Delay on Arrival Delay and 
+# 1.0 Objective: To analyse the impact of Security Delay on Arrival Delay 
+
+# 1.1 Security Delay vs Arrival Delay – To assess the correlation between security delays and arrival delays. 
+
+ggplot(flightData_clean, aes(x = SECURITY_DELAY, y = ARRIVAL_DELAY)) +
+  geom_point(alpha = 0.3, color = "lightgreen") +
+  geom_smooth(method = "lm", color = "lightblue") +
+  labs(title = "Impact of Security Delay on Arrival Delay",
+       x = "Security Delay (minutes)",
+       y = "Arrival Delay (minutes)")
+
+# 1.2 Contribution of Security Delay to Total Delay – to investigate share of total security delay that is caused by security delay. 
+
+flightData_clean <- flightData_clean %>%
+  mutate(TOTAL_DELAY = rowSums(select(., AIR_SYSTEM_DELAY, SECURITY_DELAY, AIRLINE_DELAY, LATE_AIRCRAFT_DELAY, WEATHER_DELAY), na.rm = TRUE),
+         SECURITY_SHARE = round(SECURITY_DELAY / TOTAL_DELAY, 2))
+
+# 1.3 Impact of Security Delay on Arrival Delay Across Various Airports – to analyse the impact of security delay on arrival delay across various airports. 
+
+ggplot(filtered_data, aes(x = SECURITY_DELAY, y = ARRIVAL_DELAY, color = ORIGIN_AIRPORT)) +
+  geom_point(alpha = 0.4) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Security Delay vs Arrival Delay Across Various Airports",
+       x = "Security Delay (minutes)",
+       y = "Arrival Delay (minutes)") +
+  theme_minimal() 
 
 ################################################################################
 
