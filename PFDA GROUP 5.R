@@ -447,7 +447,7 @@ ggplot(avg_contrib_long, aes(x = AirportCode, y = Minutes, fill = DelayType)) +
 
 
 #_________________________
-# Extra: Which states show the highest 
+# Analysis 1-5: Which states show the highest 
 #        average contributions of delay types to arrival delays?
 
 # Merged with IATA airport codes for richer geographic context
