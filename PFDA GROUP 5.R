@@ -341,6 +341,8 @@ ggplot(cor_df, aes(Var1, Var2, fill = Freq)) +
        x = "", y = "")
 #_________________________________________
 # Analysis 1-2: Is each delay type a strong predictor of arrival delay at top airports?
+
+#comment: run for analysis 1-2 & analysis 1-3
 top_airports <- names(sort(table(flightData_clean$ORIGIN_AIRPORT), decreasing=TRUE))[1:10]
 filtered_data <- subset(flightData_clean, ORIGIN_AIRPORT %in% top_airports)
 
@@ -385,17 +387,20 @@ ggplot(filtered_data, aes(x = LATE_AIRCRAFT_DELAY, y = ARRIVAL_DELAY)) +
   scale_y_continuous(expand = c(0.02, 0), limits = c(0, NA)) +
   theme_minimal(base_size = 9) +
   theme(strip.text = element_text(face = "bold"))
+
 #____________________________________
 # Analysis 1-3: What are the external factors that interact with delay types to influence arrival delay?
+
 flightData_long <- flightData_clean %>%
-  pivot_longer(cols = all_of(delay_cols), names_to = "DelayType", values_to = "Minutes")
+  gather(key="DelayType", value="Minutes", all_of(delay_cols))
 
 ggplot(flightData_long %>% filter(ORIGIN_AIRPORT %in% top_airports),
-       aes(x = ORIGIN_AIRPORT, y = Minutes, fill = DelayType)) +
-  geom_bar(stat = "identity", position = "fill") +
-  labs(title = "Proportional Contribution of Delay Types by Airport",
-       x = "Origin Airport", y = "Proportion of Delay") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+       aes(x=ORIGIN_AIRPORT, y=Minutes, fill=DelayType)) +
+  geom_bar(stat="identity", position="fill") +
+  labs(title="Proportional Contribution of delay types by top airports",
+       x="Origin Airport", y="Proportion of Delay") +
+  theme(axis.text.x = element_text(angle=45, hjust=1))
+
 
 #________________________________________
 # Analysis 1-4: Ranking airports by average contribution of delay types
@@ -438,18 +443,51 @@ ggplot(avg_contrib_long, aes(x = AirportCode, y = Minutes, fill = DelayType)) +
   theme(axis.text.y = element_text(size = 7))
 
 #_________________________
-# Ranking Top 15 Airports by Average Delays
-# Provides actionable insights for operational prioritization by delay type and airport.
-avg_rank <- avg_contrib %>%
-  pivot_longer(cols = c(avg_air_system, avg_airline, avg_late_aircraft), 
-               names_to = "DelayType", values_to = "Minutes") %>%
-  group_by(DelayType) %>%
-  arrange(desc(Minutes)) %>%
-  ungroup()
+# Extra: Delay Type Contributions by Geographic Region (State)
+# Merged with IATA airport codes for richer geographic context
 
-ggplot(avg_rank, aes(x = reorder(AirportCode, -Minutes), y = Minutes, fill = DelayType)) +
+flightData_geo <- flightData_clean %>%
+  mutate(ORIGIN_AIRPORT = as.character(ORIGIN_AIRPORT)) %>%
+  left_join(arData, by = c("ORIGIN_AIRPORT" = "IATA_CODE")) %>%
+  filter(!is.na(CITY)) # Keep only rows with valid geographic info
+
+state_delay_summary <- flightData_geo %>%
+  group_by(STATE) %>%
+  summarise(
+    avg_air_system = mean(AIR_SYSTEM_DELAY, na.rm = TRUE),
+    avg_airline = mean(AIRLINE_DELAY, na.rm = TRUE),
+    avg_late_aircraft = mean(LATE_AIRCRAFT_DELAY, na.rm = TRUE),
+    avg_weather = mean(WEATHER_DELAY, na.rm = TRUE),
+    avg_security = mean(SECURITY_DELAY, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  pivot_longer(
+    cols = starts_with("avg_"),
+    names_to = "DelayType",
+    values_to = "Minutes"
+  ) %>%
+  mutate(DelayType = gsub("avg_", "", DelayType))
+
+top_states <- state_delay_summary %>%
+  group_by(STATE) %>%
+  summarise(total_delay = sum(Minutes, na.rm = TRUE), .groups = "drop") %>%
+  arrange(desc(total_delay)) %>%
+  slice_head(n = 15) %>%
+  pull(STATE)
+
+state_delay_summary_filtered <- state_delay_summary %>%
+  filter(STATE %in% top_states)
+
+ggplot(state_delay_summary_filtered, aes(x = reorder(STATE, -Minutes), y = Minutes, fill = DelayType)) +
   geom_col(position = "dodge") +
-  labs(title = "Ranking of Airports by Average Delay Type",
-       x = "Airport (3-letter IATA)", y = "Average Delay (minutes)") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  labs(
+    title = "Top 15 States: Average Delay Type Contributions to Arrival Delays",
+    subtitle = "Analysis enriched with IATA airport code data (arData)",
+    x = "State (USA)",
+    y = "Average Delay Minutes"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_brewer(palette = "Set2")
+
 
