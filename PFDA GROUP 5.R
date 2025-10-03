@@ -389,7 +389,8 @@ ggplot(filtered_data, aes(x = LATE_AIRCRAFT_DELAY, y = ARRIVAL_DELAY)) +
   theme(strip.text = element_text(face = "bold"))
 
 #____________________________________
-# Analysis 1-3: What are the external factors that interact with delay types to influence arrival delay?
+# Analysis 1-3: What are the external factors that interact 
+#               with delay types to influence arrival delay?
 
 flightData_long <- flightData_clean %>%
   gather(key="DelayType", value="Minutes", all_of(delay_cols))
@@ -403,7 +404,9 @@ ggplot(flightData_long %>% filter(ORIGIN_AIRPORT %in% top_airports),
 
 
 #________________________________________
-# Analysis 1-4: Ranking airports by average contribution of delay types
+# Analysis 1-4: Which airports show the highest average 
+#               contributions of delay types to arrival delays?
+
 avg_contrib <- flightData_clean %>%
   group_by(ORIGIN_AIRPORT) %>%
   summarise(
@@ -442,8 +445,11 @@ ggplot(avg_contrib_long, aes(x = AirportCode, y = Minutes, fill = DelayType)) +
        x = "Airport (3-letter IATA)", y = "Average Minutes") +
   theme(axis.text.y = element_text(size = 7))
 
+
 #_________________________
-# Extra: Delay Type Contributions by Geographic Region (State)
+# Extra: Which states show the highest 
+#        average contributions of delay types to arrival delays?
+
 # Merged with IATA airport codes for richer geographic context
 
 flightData_geo <- flightData_clean %>%
