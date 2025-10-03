@@ -29,6 +29,11 @@ setwd("C:\\Users\\user\\Downloads\\R-assignment")
 #LimJonRae
 setwd("C:\\Users\\Acer\\Desktop\\APU MM Tech Degree\\Curricular Matters\\Degree Year 2 Semester 1 subjects and notes\\PFDA\\Group Assignment")
 
+flightData <- read.csv("flights.csv", header = TRUE)
+flightData
+acData <- read.csv("iata_airline_codes.csv")
+arData <- read.csv("iata_airport_codes.csv")
+
 #Data cleaning
 #use box plot to identify outliers?
 flightData_clean <- distinct(flightData)
