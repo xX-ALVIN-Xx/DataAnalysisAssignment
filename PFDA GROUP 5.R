@@ -29,11 +29,6 @@ setwd("C:\\Users\\user\\Downloads\\R-assignment")
 #LimJonRae
 setwd("C:\\Users\\Acer\\Desktop\\APU MM Tech Degree\\Curricular Matters\\Degree Year 2 Semester 1 subjects and notes\\PFDA\\Group Assignment")
 
-flightData <- read.csv("flights.csv", header = TRUE)
-flightData
-acData <- read.csv("iata_airline_codes.csv")
-arData <- read.csv("iata_airport_codes.csv")
-
 #Data cleaning
 #use box plot to identify outliers?
 flightData_clean <- distinct(flightData)
@@ -70,11 +65,11 @@ flightData_clean$TAXI_OUT <- ifelse(is.na(flightData_clean$TAXI_OUT), mean(fligh
 
 #TAXI_IN: Time duration elapsed between WHEELS_ON and gate arrival at DESTINATION_AIRPORT.
 flightData_clean$TAXI_IN<- ifelse(is.na(flightData_clean$TAXI_IN), mean(flightData_clean$TAXI_IN, na.rm =  TRUE),
-                                    round(flightData_clean$TAXI_IN,1))
+                                  round(flightData_clean$TAXI_IN,1))
 
 #	WHEELS_ON: Time point that the aircraft's wheels touch the ground.
 flightData_clean$WHEELS_ON <- ifelse(is.na(flightData_clean$WHEELS_ON), mean(flightData_clean$WHEELS_ON, na.rm =  TRUE),
-                                      round(flightData_clean$WHEELS_ON,1))
+                                     round(flightData_clean$WHEELS_ON,1))
 
 #WHEELS_OFF: Time point that the aircraft's wheels leave the ground.
 flightData_clean$WHEELS_OFF <- ifelse(is.na(flightData_clean$WHEELS_OFF), mean(flightData_clean$WHEELS_OFF, na.rm =  TRUE),
@@ -111,29 +106,39 @@ flightData_clean$ARRIVAL_TIME <- ifelse(is.na(flightData_clean$ARRIVAL_TIME) & !
 flightData_clean$ARRIVAL_DELAY <- ifelse(is.na(flightData_clean$ARRIVAL_DELAY) & !is.na(flightData_clean$ARRIVAL_TIME) & !is.na(flightData_clean$SCHEDULED_ARRIVAL),
                                          (flightData_clean$ARRIVAL_TIME - flightData_clean$SCHEDULED_ARRIVAL),
                                          round(flightData_clean$ARRIVAL_DELAY,1))
-  
+
 flightData_clean$SCHEDULED_DEPARTURE <- fix_military_time(flightData_clean$SCHEDULED_DEPARTURE)
 flightData_clean$DEPARTURE_TIME <- fix_military_time(flightData_clean$DEPARTURE_TIME)
 flightData_clean$SCHEDULED_ARRIVAL <- fix_military_time(flightData_clean$SCHEDULED_ARRIVAL)
 flightData_clean$WHEELS_OFF <- fix_military_time(flightData_clean$WHEELS_OFF)
 flightData_clean$WHEELS_ON <- fix_military_time(flightData_clean$WHEELS_ON)
-flightData_clean$ARRIVAL_TIME <-fix_military_time(flightData_clean$ARRIVAL_TIME)
+#flightData_clean$ARRIVAL_TIME <- fix_military_time(flightData_clean$ARRIVAL_TIME)
 
+#Ensure that it is four numbers making up the time data
+#flightData_clean$DEPARTURE_TIME <- sprintf("%04d", flightData_clean$DEPARTURE_TIME)
+#flightData_clean$ARRIVAL_TIME <- sprintf("%04d", flightData_clean$ARRIVAL_TIME)
 
+#fill in Air system delay (0 to 60 minutes)
+#na_pos <- is.na(flightData_clean$AIR_SYSTEM_DELAY)
+#flightData_clean$AIR_SYSTEM_DELAY[na_pos] <- sample(0:60, sum(na_pos), replace = TRUE)
 
+#Data cleaning for Delays
+
+#check missing Data
+is.na(flightData_clean)
+sum(is.na(flightData_clean))
+
+invalid_times <- subset(flightData_clean, DEPARTURE_TIME > 2359 | ARRIVAL_TIME > 2359)
+nrow(invalid_times)  # Should be 0 if everything's clean
+
+sum(flightData_clean$ARRIVAL_DELAY < 0)
 
 #Data Preprocessing
 flightData_clean <- mutate(flightData_clean, Delayed = ifelse(flightData_clean$ARRIVAL_DELAY > 0,1,0))
 
-delayed_flights <- flightData_clean %>% filter(Delayed == 1)
+delayed_flights <- which(flightData_clean$Delayed == 1)
 delayed_flights
 head(delayed_flights,10)
-
-# Summarize missing values across all columns for these rows
-missing_summary <- colSums(is.na(delayed_flights))
-
-# View columns with missing values
-missing_summary[missing_summary > 0]
 
 #Filtering and distributing NA delays
 # Define delay columns
@@ -165,15 +170,6 @@ for (i in delayed_flights) {
     flightData_clean[i, na_delays] <- allocated
   }
 }
-
-#check missing Data
-is.na(flightData_clean$Delayed == 1)
-sum(is.na(flightData_clean))
-
-invalid_times <- subset(flightData_clean, DEPARTURE_TIME > 2359 | ARRIVAL_TIME > 2359)
-nrow(invalid_times)  # Should be 0 if everything's clean
-
-sum(flightData_clean$ARRIVAL_DELAY < 0)
 
 
 ##############################################################
