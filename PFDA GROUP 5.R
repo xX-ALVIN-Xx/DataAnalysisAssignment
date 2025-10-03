@@ -17,7 +17,7 @@ setwd("C:\\Users\\zersh\\Desktop\\PFDA_Assignment_Datasets\\2 Dataset")
 #HaziqThaqiff
 setwd("C:\\Users\\user\\Downloads\\R-assignment")
 #LimJonRae
-setwd("C:\\Users\\Acer\\Desktop\\APU MM Tech Degree\\Curricular Matters\\Degree Year 2 Semester 1 subjects and notes\\PFDA\\Group Assignment\\2 Dataset")
+setwd("C:\\Users\\Acer\\Desktop\\APU MM Tech Degree\\Curricular Matters\\Degree Year 2 Semester 1 subjects and notes\\PFDA\\Group Assignment")
 
 flightData <- read.csv("flights.csv", header = TRUE)
 flightData
